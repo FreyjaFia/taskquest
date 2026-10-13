@@ -1,0 +1,95 @@
+@if (s.signedIn()) {
+  <div class="shell">
+    <aside class="side" aria-label="Main">
+      <a routerLink="/" class="brand"><span class="brand-mark" aria-hidden="true">⭐</span> TaskQuest</a>
+      <nav class="side-nav">
+        @for (n of nav(); track n.path) {
+          <a [routerLink]="n.path" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: n.exact }" class="nav-link">
+            <span class="nav-ico" aria-hidden="true">{{ n.icon }}</span>
+            <span>{{ n.label }}</span>
+            @if (n.badge) { <span class="badge" [attr.aria-label]="n.badge + ' waiting'">{{ n.badge }}</span> }
+          </a>
+        }
+        <a routerLink="/family" routerLinkActive="on" class="nav-link">
+          <span class="nav-ico" aria-hidden="true">👨‍👩‍👧</span><span>Family</span>
+        </a>
+      </nav>
+      <div class="side-foot">
+        <div class="chip pts">{{ s.isParent() ? 'Parent account' : 'Level ' + s.level(s.me().id).level }}</div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="top">
+        <div class="switcher">
+          <button class="fam-btn" (click)="toggle('family')" [attr.aria-expanded]="menu() === 'family'">
+            <span class="fam-emoji" aria-hidden="true">{{ s.fam().emoji }}</span>
+            <span class="fam-name">{{ s.fam().name }}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+          @if (menu() === 'family') {
+            <div class="pop" role="menu">
+              <p class="pop-title">Your families</p>
+              @for (f of s.families(); track f.id) {
+                <button role="menuitem" class="pop-item" [class.cur]="f.id === s.fam().id" (click)="pickFamily(f.id)">
+                  <span aria-hidden="true">{{ f.emoji }}</span> {{ f.name }}
+                </button>
+              }
+              <button role="menuitem" class="pop-item add" (click)="familyModal.set(true); close()">➕ Create or join a family</button>
+            </div>
+          }
+        </div>
+        <span class="spacer"></span>
+        <app-style-picker />
+        @if (!theme.locked) {
+        <button class="icon-btn" (click)="theme.toggleDark()" [attr.aria-label]="theme.dark() ? 'Switch to light mode' : 'Switch to dark mode'">
+          {{ theme.dark() ? '☀️' : '🌙' }}
+        </button>
+        }
+        <div class="switcher">
+          <button class="me-btn" (click)="toggle('profile')" [attr.aria-expanded]="menu() === 'profile'" aria-label="Profile menu">
+            <span class="avatar" [style.--c]="s.me().color" style="--s: 40px">{{ s.me().avatar }}</span>
+            <span class="me-name">{{ s.me().name }}</span>
+          </button>
+          @if (menu() === 'profile') {
+            <div class="pop right" role="menu">
+              <p class="pop-title">Signed in as {{ s.me().role === 'parent' ? 'a parent' : 'a kid' }}</p>
+              <p class="pop-sub">Demo only: switch who you are playing</p>
+              @for (m of s.fam().members; track m.id) {
+                <button role="menuitem" class="pop-item" [class.cur]="m.id === s.me().id" (click)="pickMember(m.id)">
+                  <span aria-hidden="true">{{ m.avatar }}</span> {{ m.name }}
+                  <span class="chip" style="margin-left:auto">{{ m.role }}</span>
+                </button>
+              }
+              <button role="menuitem" class="pop-item" (click)="signOut()">👋 Sign out</button>
+            </div>
+          }
+        </div>
+      </header>
+
+      @if (menu() !== 'none') { <div class="click-away" (click)="close()"></div> }
+
+      <main class="content" id="content">
+        <router-outlet />
+      </main>
+    </div>
+
+    <nav class="tabbar" aria-label="Main">
+      @for (n of nav(); track n.path) {
+        <a [routerLink]="n.path" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: n.exact }" class="tab-link">
+          <span class="tab-ico" aria-hidden="true">{{ n.icon }}</span>
+          <span>{{ n.label }}</span>
+          @if (n.badge) { <span class="badge sm">{{ n.badge }}</span> }
+        </a>
+      }
+    </nav>
+  </div>
+
+  @if (familyModal()) { <app-family-modal (closed)="familyModal.set(false)" /> }
+} @else {
+  <router-outlet />
+}
+
+@if (s.toastMsg(); as t) {
+  <div class="toast" role="status" aria-live="polite"><span aria-hidden="true">{{ t.emoji }}</span> {{ t.text }}</div>
+}
